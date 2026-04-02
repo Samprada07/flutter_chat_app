@@ -1,0 +1,16 @@
+# Node
+node_modules/
+.env
+
+# Flutter
+.dart_tool/
+build/
+*.g.dart
+pubspec.lock
+
+# VS Code
+.vscode/
+
+# System
+.DS_Store
+Thumbs.db
