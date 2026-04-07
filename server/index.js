@@ -5,6 +5,7 @@ require('dotenv').config();
 require('./src/db/pool');
 
 const authRoutes = require('./src/routes/auth');
+const authMiddleware = require('./src/middleware/authMiddleware');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,4 +23,9 @@ app.get('/', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+});
+
+// Temporary protected test route
+app.get('/api/protected', authMiddleware, (req, res) => {
+  res.json({ message: `Hello ${req.user.username}, you are authenticated!` });
 });
