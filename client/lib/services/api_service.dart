@@ -1,9 +1,9 @@
 import 'dart:convert';
+import 'package:chat_app/config.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Use 10.0.2.2 for Android emulator (maps to localhost)
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  static String get baseUrl => Config.baseUrl;
 
   // Register
   static Future<Map<String, dynamic>> register({
