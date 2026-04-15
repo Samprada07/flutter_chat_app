@@ -30,3 +30,29 @@ CREATE TABLE IF NOT EXISTS messages (
   content TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Contacts table
+-- Stores the relationship between two users when one adds the other as a contact
+-- status: 'pending' = request sent, 'accepted' = both connected
+CREATE TABLE IF NOT EXISTS contacts (
+  id SERIAL PRIMARY KEY,
+  requester_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  status VARCHAR(20) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT NOW(),
+
+  -- Prevent duplicate contact requests between same two users
+  UNIQUE(requester_id, receiver_id)
+);
+
+-- Direct messages table
+-- Stores private 1-on-1 messages between two users
+-- Unlike room messages, these belong to a conversation between two users
+CREATE TABLE IF NOT EXISTS direct_messages (
+  id SERIAL PRIMARY KEY,
+  sender_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,  -- track if message has been read
+  created_at TIMESTAMP DEFAULT NOW()
+);
