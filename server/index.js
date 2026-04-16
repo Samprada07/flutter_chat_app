@@ -7,6 +7,8 @@ require('./src/db/pool');
 
 const authRoutes = require('./src/routes/auth');
 const roomsRoutes = require('./src/routes/rooms');
+const contactsRoutes = require('./src/routes/contacts');
+const directMessagesRoutes = require('./src/routes/directMessages');
 const authMiddleware = require('./src/middleware/authMiddleware');
 const { setupWebSocket } = require('./src/websocket/wsServer');
 
@@ -16,9 +18,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// ─── Routes ───────────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/rooms', roomsRoutes);
+app.use('/api/contacts', contactsRoutes);
+app.use('/api/direct-messages', directMessagesRoutes);
 
 // Health check
 app.get('/', (req, res) => {
@@ -30,7 +34,7 @@ app.get('/api/protected', authMiddleware, (req, res) => {
   res.json({ message: `Hello ${req.user.username}!` });
 });
 
-// Create HTTP server and attach WebSocket
+// ─── HTTP + WebSocket Server ──────────────────────────────────────────────
 const server = http.createServer(app);
 setupWebSocket(server);
 
