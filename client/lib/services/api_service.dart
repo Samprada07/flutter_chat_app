@@ -208,4 +208,19 @@ class ApiService {
     );
     return jsonDecode(response.body);
   }
+
+  // ─── Room Messages ─────────────────────────────────────────────────────────
+
+  // Get full message history for a specific room
+  // Called when the user opens a room chat screen
+  static Future<List<dynamic>> getRoomMessages(String token, int roomId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/rooms/$roomId/messages'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return jsonDecode(response.body);
+  }
 }

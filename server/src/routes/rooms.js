@@ -6,6 +6,7 @@ const {
   getRooms,
   joinRoom,
   getMyRooms,
+  getRoomMessages, 
 } = require('../controllers/roomsController');
 
 // All routes are protected
@@ -15,5 +16,6 @@ router.post('/', createRoom);
 router.get('/', getRooms);
 router.get('/my', getMyRooms);
 router.post('/:roomId/join', joinRoom);
+router.get('/:roomId/messages', getRoomMessages); 
 
 module.exports = router;

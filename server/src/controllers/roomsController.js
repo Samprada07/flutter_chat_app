@@ -121,4 +121,35 @@ const getMyRooms = async (req, res) => {
   }
 };
 
-module.exports = { createRoom, getRooms, joinRoom, getMyRooms };
+// ─── Get Room Messages ────────────────────────────────────────────────────
+// Returns full message history for a specific room
+// Ordered oldest first so the chat screen displays correctly
+// Also fetches the sender's username by joining with users table
+const getRoomMessages = async (req, res) => {
+  const { roomId } = req.params;
+
+  try {
+    const result = await pool.query(
+      `SELECT
+         messages.id,
+         messages.room_id,
+         messages.sender_id,
+         messages.content,
+         messages.created_at,
+         users.username AS sender_name
+       FROM messages
+       JOIN users ON messages.sender_id = users.id
+       WHERE messages.room_id = $1
+       ORDER BY messages.created_at ASC`,
+      [roomId]
+    );
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+module.exports = { createRoom, getRooms, joinRoom, getMyRooms, getRoomMessages };
