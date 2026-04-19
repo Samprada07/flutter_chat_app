@@ -67,4 +67,13 @@ class RoomsProvider extends ChangeNotifier {
       return false;
     }
   }
+
+  Future<bool> isRoomMember(String token, int roomId, int userId) async {
+    try {
+      final data = await ApiService.getMyRooms(token);
+      return data.any((r) => r['id'] == roomId);
+    } catch (e) {
+      return false;
+    }
+  }
 }

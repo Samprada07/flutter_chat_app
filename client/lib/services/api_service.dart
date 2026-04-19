@@ -223,4 +223,15 @@ class ApiService {
     );
     return jsonDecode(response.body);
   }
+
+  static Future<List<dynamic>> getMyRooms(String token) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/rooms/my'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    return jsonDecode(response.body);
+  }
 }

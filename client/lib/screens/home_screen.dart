@@ -1,3 +1,4 @@
+import 'package:chat_app/screens/group_chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
@@ -163,7 +164,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       subtitle: Text('${room.memberCount} members'),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () => _showJoinRoomDialog(room),
+                      onTap: () async {
+                        final token =
+                            context.read<AuthProvider>().user?.token ?? '';
+                        final userId =
+                            context.read<AuthProvider>().user?.id ?? 0;
+
+                        // If user is already a member, go directly to chat
+                        // Otherwise show join dialog first
+                        final isMember = await context
+                            .read<RoomsProvider>()
+                            .isRoomMember(token, room.id, userId);
+
+                        if (isMember && mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => GroupChatScreen(room: room),
+                            ),
+                          );
+                        } else {
+                          _showJoinRoomDialog(room);
+                        }
+                      },
                     ),
                   );
                 },
