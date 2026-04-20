@@ -19,6 +19,8 @@ class _HomeScreenState extends State<HomeScreen> {
   // Controls which tab is active: 0 = Rooms, 1 = Contacts
   int _currentIndex = 0;
 
+  bool _showSearch = false;
+
   @override
   void initState() {
     super.initState();
@@ -199,10 +201,8 @@ class _HomeScreenState extends State<HomeScreen> {
           // Show search and pending icons only on Contacts tab
           if (_currentIndex == 1) ...[
             IconButton(
-              icon: const Icon(Icons.search),
-              onPressed: () {
-                // Toggle search — will wire properly in next fix
-              },
+              icon: Icon(_showSearch ? Icons.close : Icons.search),
+              onPressed: () => setState(() => _showSearch = !_showSearch),
             ),
             IconButton(
               icon: const Icon(Icons.person_add),
@@ -220,7 +220,9 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
 
       // Switch between Rooms and Contacts tabs
-      body: _currentIndex == 0 ? _buildRoomsTab() : const ContactsScreen(),
+      body: _currentIndex == 0
+          ? _buildRoomsTab()
+          : ContactsScreen(showSearch: _showSearch),
 
       // Bottom navigation bar with two tabs
       bottomNavigationBar: BottomNavigationBar(

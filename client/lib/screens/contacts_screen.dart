@@ -5,7 +5,10 @@ import '../providers/contacts_provider.dart';
 import '../models/contact.dart';
 
 class ContactsScreen extends StatefulWidget {
-  const ContactsScreen({super.key});
+  // Called from HomeScreen to toggle search
+  final bool showSearch;
+
+  const ContactsScreen({super.key, required this.showSearch});
 
   @override
   State<ContactsScreen> createState() => _ContactsScreenState();
@@ -14,14 +17,9 @@ class ContactsScreen extends StatefulWidget {
 class _ContactsScreenState extends State<ContactsScreen> {
   final _searchController = TextEditingController();
 
-  // Controls whether the search bar is visible
-  bool _showSearch = false;
-
   @override
   void initState() {
     super.initState();
-
-    // Load contacts and pending requests when screen opens
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final token = context.read<AuthProvider>().user?.token ?? '';
       context.read<ContactsProvider>().fetchContacts(token);
@@ -30,20 +28,26 @@ class _ContactsScreenState extends State<ContactsScreen> {
   }
 
   @override
+  void didUpdateWidget(ContactsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Clear search when search is toggled off
+    if (!widget.showSearch) {
+      _searchController.clear();
+      context.read<ContactsProvider>().clearSearch();
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-  // ─── Search Users ────────────────────────────────────────────────────────
-  // Triggered on every keystroke in the search bar
   void _onSearchChanged(String query) {
     final token = context.read<AuthProvider>().user?.token ?? '';
     context.read<ContactsProvider>().searchUsers(token, query);
   }
 
-  // ─── Send Contact Request ────────────────────────────────────────────────
-  // Sends a contact request and shows a snackbar with result
   Future<void> _sendRequest(int receiverId, String username) async {
     final token = context.read<AuthProvider>().user?.token ?? '';
     final success = await context.read<ContactsProvider>().sendContactRequest(
@@ -56,7 +60,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
         SnackBar(
           content: Text(
             success
-                ? 'Contact request sent to $username!'
+                ? 'Request sent to $username!'
                 : context.read<ContactsProvider>().error ?? 'Failed',
           ),
           backgroundColor: success ? Colors.green : Colors.red,
@@ -65,8 +69,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
   }
 
-  // ─── Remove Contact Dialog ───────────────────────────────────────────────
-  // Shows confirmation dialog before removing a contact
   void _showRemoveDialog(Contact contact) {
     showDialog(
       context: context,
@@ -98,18 +100,42 @@ class _ContactsScreenState extends State<ContactsScreen> {
   @override
   Widget build(BuildContext context) {
     final contacts = context.watch<ContactsProvider>();
-    final pendingCount = contacts.pendingRequests.length;
 
-    // No Scaffold here — HomeScreen already provides it
-    return contacts.isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : _showSearch
-        ? _buildSearchResults(contacts)
-        : _buildContactsList(contacts);
+    return Column(
+      children: [
+        // Show search bar below appbar when search is active
+        if (widget.showSearch)
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search users...',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: _onSearchChanged,
+            ),
+          ),
+
+        // Body content
+        Expanded(
+          child: contacts.isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : widget.showSearch
+              ? _buildSearchResults(contacts)
+              : _buildContactsList(contacts),
+        ),
+      ],
+    );
   }
 
-  // ─── Search Results Widget ───────────────────────────────────────────────
-  // Shows users found by search with an Add button
   Widget _buildSearchResults(ContactsProvider contacts) {
     if (contacts.isSearching) {
       return const Center(child: CircularProgressIndicator());
@@ -128,7 +154,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final user = contacts.searchResults[index];
         return Card(
           child: ListTile(
-            // User avatar with first letter of username
             leading: CircleAvatar(
               backgroundColor: Colors.blue.shade100,
               child: Text(
@@ -148,8 +173,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
     );
   }
 
-  // ─── Contacts List Widget ────────────────────────────────────────────────
-  // Shows all accepted contacts with option to remove
   Widget _buildContactsList(ContactsProvider contacts) {
     if (contacts.contacts.isEmpty) {
       return const Center(
@@ -169,7 +192,6 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final contact = contacts.contacts[index];
         return Card(
           child: ListTile(
-            // Contact avatar with first letter of username
             leading: CircleAvatar(
               backgroundColor: Colors.green.shade100,
               child: Text(
@@ -186,9 +208,8 @@ class _ContactsScreenState extends State<ContactsScreen> {
               icon: const Icon(Icons.more_vert),
               onPressed: () => _showRemoveDialog(contact),
             ),
-            // Navigate to direct chat on tap
             onTap: () {
-              // Will be wired in Commit 17
+              // Will wire to direct chat in Commit 17
             },
           ),
         );
