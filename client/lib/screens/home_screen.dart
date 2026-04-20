@@ -196,13 +196,24 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: Text(_currentIndex == 0 ? 'Chat Rooms' : 'Contacts'),
         actions: [
+          // Show search and pending icons only on Contacts tab
+          if (_currentIndex == 1) ...[
+            IconButton(
+              icon: const Icon(Icons.search),
+              onPressed: () {
+                // Toggle search — will wire properly in next fix
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: () => Navigator.pushNamed(context, '/pending'),
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await auth.logout();
-              if (mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
-              }
+              await context.read<AuthProvider>().logout();
+              if (mounted) Navigator.pushReplacementNamed(context, '/login');
             },
           ),
         ],

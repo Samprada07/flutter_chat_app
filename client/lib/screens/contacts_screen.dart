@@ -100,70 +100,12 @@ class _ContactsScreenState extends State<ContactsScreen> {
     final contacts = context.watch<ContactsProvider>();
     final pendingCount = contacts.pendingRequests.length;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: _showSearch
-            // Search bar in app bar when searching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                decoration: const InputDecoration(
-                  hintText: 'Search users...',
-                  border: InputBorder.none,
-                ),
-                onChanged: _onSearchChanged,
-              )
-            : const Text('Contacts'),
-        actions: [
-          // Toggle search bar
-          IconButton(
-            icon: Icon(_showSearch ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() => _showSearch = !_showSearch);
-              if (!_showSearch) {
-                _searchController.clear();
-                context.read<ContactsProvider>().clearSearch();
-              }
-            },
-          ),
-
-          // Pending requests button with badge
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.person_add),
-                onPressed: () => Navigator.pushNamed(context, '/pending'),
-              ),
-              // Show badge only if there are pending requests
-              if (pendingCount > 0)
-                Positioned(
-                  right: 8,
-                  top: 8,
-                  child: Container(
-                    padding: const EdgeInsets.all(2),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Text(
-                      '$pendingCount',
-                      style: const TextStyle(color: Colors.white, fontSize: 10),
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-
-      body: contacts.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _showSearch
-          // ─── Search Results ──────────────────────────────────────
-          ? _buildSearchResults(contacts)
-          // ─── Contacts List ───────────────────────────────────────
-          : _buildContactsList(contacts),
-    );
+    // No Scaffold here — HomeScreen already provides it
+    return contacts.isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : _showSearch
+        ? _buildSearchResults(contacts)
+        : _buildContactsList(contacts);
   }
 
   // ─── Search Results Widget ───────────────────────────────────────────────
