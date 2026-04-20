@@ -1,9 +1,10 @@
-import 'package:chat_app/screens/group_chat_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/rooms_provider.dart';
 import '../models/room.dart';
+import 'group_chat_screen.dart';
+import 'contacts_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -14,6 +15,9 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _roomNameController = TextEditingController();
+
+  // Controls which tab is active: 0 = Rooms, 1 = Contacts
+  int _currentIndex = 0;
 
   @override
   void initState() {
@@ -30,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  // Create room dialog
+  // ─── Create Room Dialog ──────────────────────────────────────────────────
   void _showCreateRoomDialog() {
     showDialog(
       context: context,
@@ -71,7 +75,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Join room dialog
+  // ─── Join Room Dialog ────────────────────────────────────────────────────
+  // Shown when user taps a room they haven't joined yet
   void _showJoinRoomDialog(Room room) {
     showDialog(
       context: context,
@@ -107,14 +112,89 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  // ─── Rooms Tab ───────────────────────────────────────────────────────────
+  // Builds the rooms list shown in the first tab
+  Widget _buildRoomsTab() {
     final auth = context.watch<AuthProvider>();
     final rooms = context.watch<RoomsProvider>();
 
+    if (rooms.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (rooms.rooms.isEmpty) {
+      return const Center(
+        child: Text(
+          'No rooms yet.\nCreate one!',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () {
+        final token = auth.user?.token ?? '';
+        return rooms.fetchRooms(token);
+      },
+      child: ListView.separated(
+        padding: const EdgeInsets.all(16),
+        itemCount: rooms.rooms.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        itemBuilder: (context, index) {
+          final room = rooms.rooms[index];
+          return Card(
+            child: ListTile(
+              // Room avatar with first letter of room name
+              leading: CircleAvatar(
+                backgroundColor: Colors.blue.shade100,
+                child: Text(
+                  room.name[0].toUpperCase(),
+                  style: const TextStyle(color: Colors.blue),
+                ),
+              ),
+              title: Text(
+                room.name,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Text('${room.memberCount} members'),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () async {
+                final token = auth.user?.token ?? '';
+                final userId = auth.user?.id ?? 0;
+
+                // Check if user is already a member of this room
+                final isMember = await context
+                    .read<RoomsProvider>()
+                    .isRoomMember(token, room.id, userId);
+
+                if (isMember && mounted) {
+                  // Go directly to chat if already a member
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GroupChatScreen(room: room),
+                    ),
+                  );
+                } else {
+                  // Show join dialog if not a member
+                  _showJoinRoomDialog(room);
+                }
+              },
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat Rooms'),
+        title: Text(_currentIndex == 0 ? 'Chat Rooms' : 'Contacts'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -128,75 +208,26 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      body: rooms.isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : rooms.rooms.isEmpty
-          ? const Center(
-              child: Text(
-                'No rooms yet.\nCreate one!',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: () {
-                final token = auth.user?.token ?? '';
-                return rooms.fetchRooms(token);
-              },
-              child: ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: rooms.rooms.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
-                  final room = rooms.rooms[index];
-                  return Card(
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.blue.shade100,
-                        child: Text(
-                          room.name[0].toUpperCase(),
-                          style: const TextStyle(color: Colors.blue),
-                        ),
-                      ),
-                      title: Text(
-                        room.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text('${room.memberCount} members'),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () async {
-                        final token =
-                            context.read<AuthProvider>().user?.token ?? '';
-                        final userId =
-                            context.read<AuthProvider>().user?.id ?? 0;
+      // Switch between Rooms and Contacts tabs
+      body: _currentIndex == 0 ? _buildRoomsTab() : const ContactsScreen(),
 
-                        // If user is already a member, go directly to chat
-                        // Otherwise show join dialog first
-                        final isMember = await context
-                            .read<RoomsProvider>()
-                            .isRoomMember(token, room.id, userId);
-
-                        if (isMember && mounted) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => GroupChatScreen(room: room),
-                            ),
-                          );
-                        } else {
-                          _showJoinRoomDialog(room);
-                        }
-                      },
-                    ),
-                  );
-                },
-              ),
-            ),
-
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showCreateRoomDialog,
-        child: const Icon(Icons.add),
+      // Bottom navigation bar with two tabs
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Rooms'),
+          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Contacts'),
+        ],
       ),
+
+      // Show FAB only on Rooms tab
+      floatingActionButton: _currentIndex == 0
+          ? FloatingActionButton(
+              onPressed: _showCreateRoomDialog,
+              child: const Icon(Icons.add),
+            )
+          : null,
     );
   }
 }
