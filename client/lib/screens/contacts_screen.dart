@@ -152,6 +152,12 @@ class _ContactsScreenState extends State<ContactsScreen> {
       itemCount: contacts.searchResults.length,
       itemBuilder: (context, index) {
         final user = contacts.searchResults[index];
+
+        // Check if this user is already a contact
+        final isAlreadyContact = contacts.contacts.any(
+          (c) => c.userId == user['id'],
+        );
+
         return Card(
           child: ListTile(
             leading: CircleAvatar(
@@ -163,10 +169,14 @@ class _ContactsScreenState extends State<ContactsScreen> {
             ),
             title: Text(user['username']),
             subtitle: Text(user['email']),
-            trailing: ElevatedButton(
-              onPressed: () => _sendRequest(user['id'], user['username']),
-              child: const Text('Add'),
-            ),
+            trailing: isAlreadyContact
+                // Show nothing if already a contact
+                ? null
+                // Show Add button if not a contact
+                : ElevatedButton(
+                    onPressed: () => _sendRequest(user['id'], user['username']),
+                    child: const Text('Add'),
+                  ),
           ),
         );
       },
