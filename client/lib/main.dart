@@ -5,6 +5,7 @@ import 'providers/rooms_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/contacts_provider.dart';
 import 'screens/contacts_screen.dart';
+import 'screens/pending_requests_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
@@ -38,6 +39,7 @@ class MyApp extends StatelessWidget {
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
           '/contacts': (context) => const ContactsScreen(showSearch: false),
+          '/pending': (context) => const PendingRequestsScreen(),
         },
       ),
     );

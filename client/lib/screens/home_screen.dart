@@ -192,7 +192,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
+    //final auth = context.watch<AuthProvider>();
 
     return Scaffold(
       appBar: AppBar(
