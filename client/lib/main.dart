@@ -6,6 +6,7 @@ import 'providers/chat_provider.dart';
 import 'providers/contacts_provider.dart';
 import 'screens/contacts_screen.dart';
 import 'screens/pending_requests_screen.dart';
+import 'providers/direct_messages_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RoomsProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
         ChangeNotifierProvider(create: (_) => ContactsProvider()),
+        ChangeNotifierProvider(create: (_) => DirectMessagesProvider()),
       ],
       child: MaterialApp(
         title: 'Chat App',

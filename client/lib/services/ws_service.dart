@@ -111,6 +111,17 @@ class WsService {
     _channel!.sink.add(encoded);
   }
 
+  // ─── Send Direct Message ─────────────────────────────────────────────────
+  // Sends a private message to a specific user through WebSocket
+  // The server saves it to direct_messages table and delivers it
+  void sendDirectMessage(int receiverId, String content) {
+    _send({
+      'type': 'send_direct_message',
+      'receiverId': receiverId,
+      'content': content,
+    });
+  }
+
   // ─── Disconnect ───────────────────────────────────────────────────────────
   // Called on logout — closes the WebSocket connection cleanly
   // and resets the connection state
