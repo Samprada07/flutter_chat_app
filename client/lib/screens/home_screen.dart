@@ -5,6 +5,7 @@ import '../providers/rooms_provider.dart';
 import '../models/room.dart';
 import 'group_chat_screen.dart';
 import 'contacts_screen.dart';
+import 'chats_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,7 +17,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _roomNameController = TextEditingController();
 
-  // Controls which tab is active: 0 = Rooms, 1 = Contacts
+  // 0 = Rooms, 1 = Chats, 2 = Contacts
   int _currentIndex = 0;
 
   bool _showSearch = false;
@@ -114,8 +115,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ─── Rooms Tab ───────────────────────────────────────────────────────────
-  // Builds the rooms list shown in the first tab
+  // ─── Join Room Dialog ────────────────────────────────────────────────────
+  // Shown when user taps a room they haven't joined yet
   Widget _buildRoomsTab() {
     final auth = context.watch<AuthProvider>();
     final rooms = context.watch<RoomsProvider>();
@@ -190,16 +191,29 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // ─── App Bar Title ────────────────────────────────────────────────────────
+  // Returns the correct title based on the active tab
+  String get _appBarTitle {
+    switch (_currentIndex) {
+      case 0:
+        return 'Rooms';
+      case 1:
+        return 'Chats';
+      case 2:
+        return 'Contacts';
+      default:
+        return 'Chat App';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    //final auth = context.watch<AuthProvider>();
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(_currentIndex == 0 ? 'Chat Rooms' : 'Contacts'),
+        title: Text(_appBarTitle),
         actions: [
           // Show search and pending icons only on Contacts tab
-          if (_currentIndex == 1) ...[
+          if (_currentIndex == 2) ...[
             IconButton(
               icon: Icon(_showSearch ? Icons.close : Icons.search),
               onPressed: () => setState(() => _showSearch = !_showSearch),
@@ -213,24 +227,51 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await context.read<AuthProvider>().logout();
-              if (mounted) Navigator.pushReplacementNamed(context, '/login');
+              if (mounted) {
+                Navigator.pushReplacementNamed(context, '/login');
+              }
             },
           ),
         ],
       ),
 
-      // Switch between Rooms and Contacts tabs
-      body: _currentIndex == 0
-          ? _buildRoomsTab()
-          : ContactsScreen(showSearch: _showSearch),
+      // Switch between tabs
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [
+          // Tab 0: Rooms
+          _buildRoomsTab(),
+          // Tab 1: Chats
+          const ChatsScreen(),
+          // Tab 2: Contacts
+          ContactsScreen(showSearch: _showSearch),
+        ],
+      ),
 
-      // Bottom navigation bar with two tabs
+      // Bottom navigation with 3 tabs
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
+        onTap: (index) => setState(() {
+          _currentIndex = index;
+          // Reset search when switching tabs
+          if (index != 2) _showSearch = false;
+        }),
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.chat), label: 'Rooms'),
-          BottomNavigationBarItem(icon: Icon(Icons.people), label: 'Contacts'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            activeIcon: Icon(Icons.chat_bubble),
+            label: 'Rooms',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.message_outlined),
+            activeIcon: Icon(Icons.message),
+            label: 'Chats',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people_outline),
+            activeIcon: Icon(Icons.people),
+            label: 'Contacts',
+          ),
         ],
       ),
 
