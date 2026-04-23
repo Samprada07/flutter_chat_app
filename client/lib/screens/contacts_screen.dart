@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/contacts_provider.dart';
 import '../models/contact.dart';
+import 'direct_message_screen.dart';
 
 class ContactsScreen extends StatefulWidget {
   // Called from HomeScreen to toggle search
@@ -219,7 +220,12 @@ class _ContactsScreenState extends State<ContactsScreen> {
               onPressed: () => _showRemoveDialog(contact),
             ),
             onTap: () {
-              // Will wire to direct chat in Commit 17
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => DirectMessageScreen(contact: contact),
+                ),
+              );
             },
           ),
         );
