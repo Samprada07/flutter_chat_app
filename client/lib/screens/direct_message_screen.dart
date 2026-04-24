@@ -105,7 +105,8 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
     context.read<DirectMessagesProvider>().updateConversationPreview(
       widget.contact.userId,
       widget.contact.username,
-      content,
+      '',
+      incrementUnread: false, // Don't increment unread for sent messages
     );
 
     _messageController.clear();

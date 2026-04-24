@@ -82,26 +82,20 @@ class DirectMessagesProvider extends ChangeNotifier {
   }
 
   // ─── Update Conversation Preview ─────────────────────────────────────────
-  // Updates the last message preview in the conversations list
-  // Called after sending or receiving a direct message
+  // Updates the last message preview and increments unread count
+  // when a new message arrives while the chat screen is not open
   void updateConversationPreview(
     int userId,
     String username,
-    String lastMessage,
-  ) {
+    String lastMessage, {
+    bool incrementUnread = true,
+  }) {
     final index = _conversations.indexWhere((c) => c.userId == userId);
 
     if (index != -1) {
-      // Update existing conversation preview
-      _conversations[index] = Conversation(
-        userId: userId,
-        username: username,
-        lastMessage: lastMessage,
-        lastMessageAt: DateTime.now().toIso8601String(),
-        unreadCount: 0,
-      );
-    } else {
-      // Add new conversation if it doesn't exist yet
+      final existing = _conversations[index];
+      // Remove and re-insert at top (like WhatsApp)
+      _conversations.removeAt(index);
       _conversations.insert(
         0,
         Conversation(
@@ -109,7 +103,20 @@ class DirectMessagesProvider extends ChangeNotifier {
           username: username,
           lastMessage: lastMessage,
           lastMessageAt: DateTime.now().toIso8601String(),
-          unreadCount: 0,
+          // Increment unread count only for received messages
+          unreadCount: incrementUnread ? existing.unreadCount + 1 : 0,
+        ),
+      );
+    } else {
+      // Add new conversation at top if it doesn't exist yet
+      _conversations.insert(
+        0,
+        Conversation(
+          userId: userId,
+          username: username,
+          lastMessage: lastMessage,
+          lastMessageAt: DateTime.now().toIso8601String(),
+          unreadCount: incrementUnread ? 1 : 0,
         ),
       );
     }
