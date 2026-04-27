@@ -24,6 +24,13 @@ class DirectMessagesProvider extends ChangeNotifier {
   bool get isLoadingMessages => _isLoadingMessages;
   String? get error => _error;
 
+  // ─── Total Unread Count ───────────────────────────────────────────────────
+  // Returns total number of conversations with unread messages
+  // Used to show badge on the Chats tab icon in bottom navigation
+  int get totalUnreadCount {
+    return _conversations.where((c) => c.unreadCount > 0).length;
+  }
+
   // ─── Fetch Conversations ─────────────────────────────────────────────────
   // Loads all conversation summaries for the Chats tab
   // Each conversation shows the last message and unread count

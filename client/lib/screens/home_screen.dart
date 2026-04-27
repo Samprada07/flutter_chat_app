@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/rooms_provider.dart';
+import '../providers/direct_messages_provider.dart';
 import '../models/room.dart';
 import 'group_chat_screen.dart';
 import 'contacts_screen.dart';
@@ -143,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: rooms.rooms.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 8),
+        separatorBuilder: (_, _) => const SizedBox(height: 8),
         itemBuilder: (context, index) {
           final room = rooms.rooms[index];
           return Card(
@@ -188,6 +189,49 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
+    );
+  }
+
+  // ─── Chats Icon with Unread Badge ─────────────────────────────────────────
+  // Builds the Chats tab icon with a red badge showing
+  // the number of conversations with unread messages
+  Widget _buildChatsIcon(BuildContext context, {bool isActive = false}) {
+    // Watch DirectMessagesProvider for unread count changes
+    final totalUnread = context
+        .watch<DirectMessagesProvider>()
+        .totalUnreadCount;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Base icon
+        Icon(isActive ? Icons.message : Icons.message_outlined),
+
+        // Show badge only if there are unread conversations
+        if (totalUnread > 0)
+          Positioned(
+            right: -6,
+            top: -4,
+            child: Container(
+              padding: const EdgeInsets.all(3),
+              decoration: const BoxDecoration(
+                color: Colors.red,
+                shape: BoxShape.circle,
+              ),
+              constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+              child: Text(
+                // Show 9+ if more than 9 unread conversations
+                totalUnread > 9 ? '9+' : '$totalUnread',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -253,21 +297,25 @@ class _HomeScreenState extends State<HomeScreen> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() {
           _currentIndex = index;
-          // Reset search when switching tabs
           if (index != 2) _showSearch = false;
         }),
-        items: const [
-          BottomNavigationBarItem(
+        items: [
+          // Rooms tab
+          const BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline),
             activeIcon: Icon(Icons.chat_bubble),
             label: 'Rooms',
           ),
+
+          // Chats tab with unread badge
           BottomNavigationBarItem(
-            icon: Icon(Icons.message_outlined),
-            activeIcon: Icon(Icons.message),
+            icon: _buildChatsIcon(context),
+            activeIcon: _buildChatsIcon(context, isActive: true),
             label: 'Chats',
           ),
-          BottomNavigationBarItem(
+
+          // Contacts tab
+          const BottomNavigationBarItem(
             icon: Icon(Icons.people_outline),
             activeIcon: Icon(Icons.people),
             label: 'Contacts',
