@@ -17,13 +17,19 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _user != null;
 
+  void _notify() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
   // ─── Register ─────────────────────────────────────────────────────────────
   // Registers a new user and saves their token locally
   // Does NOT connect WebSocket — user must login separately
   Future<bool> register(String username, String email, String password) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _notify();
 
     try {
       final data = await ApiService.register(
@@ -35,17 +41,17 @@ class AuthProvider extends ChangeNotifier {
       if (data['error'] != null) {
         _error = data['error'];
         _isLoading = false;
-        notifyListeners();
+        _notify();
         return false;
       }
 
       _isLoading = false;
-      notifyListeners();
+      _notify();
       return true;
     } catch (e) {
       _error = 'Connection error. Is the server running?';
       _isLoading = false;
-      notifyListeners();
+      _notify();
       return false;
     }
   }
@@ -56,7 +62,7 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _notify();
 
     try {
       final data = await ApiService.login(email: email, password: password);
@@ -64,7 +70,7 @@ class AuthProvider extends ChangeNotifier {
       if (data['error'] != null) {
         _error = data['error'];
         _isLoading = false;
-        notifyListeners();
+        _notify();
         return false;
       }
 
@@ -79,12 +85,12 @@ class AuthProvider extends ChangeNotifier {
       _wsService.connect(_user!.token);
 
       _isLoading = false;
-      notifyListeners();
+      _notify();
       return true;
     } catch (e) {
       _error = 'Connection error. Is the server running?';
       _isLoading = false;
-      notifyListeners();
+      _notify();
       return false;
     }
   }
@@ -101,7 +107,7 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove('token');
 
-    notifyListeners();
+    _notify();
   }
 
   // ─── Save Token ───────────────────────────────────────────────────────────

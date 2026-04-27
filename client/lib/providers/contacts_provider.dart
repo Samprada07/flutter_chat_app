@@ -23,12 +23,18 @@ class ContactsProvider extends ChangeNotifier {
   bool get isSearching => _isSearching;
   String? get error => _error;
 
+  void _notify() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
   // ─── Fetch Contacts ──────────────────────────────────────────────────────
   // Loads all accepted contacts for the current user
   Future<void> fetchContacts(String token) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _notify();
 
     try {
       final data = await ApiService.getContacts(token);
@@ -38,7 +44,7 @@ class ContactsProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
+    _notify();
   }
 
   // ─── Fetch Pending Requests ──────────────────────────────────────────────
@@ -47,10 +53,10 @@ class ContactsProvider extends ChangeNotifier {
     try {
       final data = await ApiService.getPendingRequests(token);
       _pendingRequests = data.map((c) => Contact.fromJson(c)).toList();
-      notifyListeners();
+      _notify();
     } catch (e) {
       _error = 'Failed to load pending requests';
-      notifyListeners();
+      _notify();
     }
   }
 
@@ -60,12 +66,12 @@ class ContactsProvider extends ChangeNotifier {
     // Don't search if query is empty
     if (query.isEmpty) {
       _searchResults = [];
-      notifyListeners();
+      _notify();
       return;
     }
 
     _isSearching = true;
-    notifyListeners();
+    _notify();
 
     try {
       _searchResults = await ApiService.searchUsers(token, query);
@@ -74,7 +80,7 @@ class ContactsProvider extends ChangeNotifier {
     }
 
     _isSearching = false;
-    notifyListeners();
+    _notify();
   }
 
   // ─── Send Contact Request ────────────────────────────────────────────────
@@ -85,17 +91,17 @@ class ContactsProvider extends ChangeNotifier {
 
       if (data['error'] != null) {
         _error = data['error'];
-        notifyListeners();
+        _notify();
         return false;
       }
 
       // Clear search results after sending request
       _searchResults = [];
-      notifyListeners();
+      _notify();
       return true;
     } catch (e) {
       _error = 'Failed to send contact request';
-      notifyListeners();
+      _notify();
       return false;
     }
   }
@@ -108,7 +114,7 @@ class ContactsProvider extends ChangeNotifier {
 
       if (data['error'] != null) {
         _error = data['error'];
-        notifyListeners();
+        _notify();
         return false;
       }
 
@@ -118,7 +124,7 @@ class ContactsProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _error = 'Failed to accept request';
-      notifyListeners();
+      _notify();
       return false;
     }
   }
@@ -131,16 +137,17 @@ class ContactsProvider extends ChangeNotifier {
 
       if (data['error'] != null) {
         _error = data['error'];
-        notifyListeners();
+        _notify();
         return false;
       }
 
       // Refresh contacts list after removal
       await fetchContacts(token);
+      _notify();
       return true;
     } catch (e) {
       _error = 'Failed to remove contact';
-      notifyListeners();
+      _notify();
       return false;
     }
   }
@@ -149,6 +156,6 @@ class ContactsProvider extends ChangeNotifier {
   // Clears search results when search bar is dismissed
   void clearSearch() {
     _searchResults = [];
-    notifyListeners();
+    _notify();
   }
 }

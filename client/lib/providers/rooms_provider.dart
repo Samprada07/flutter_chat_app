@@ -11,11 +11,17 @@ class RoomsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  void _notify() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
   // Fetch all rooms
   Future<void> fetchRooms(String token) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _notify();
 
     try {
       final data = await ApiService.getRooms(token);
@@ -25,7 +31,7 @@ class RoomsProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
+    _notify();
   }
 
   // Create a room
@@ -35,7 +41,7 @@ class RoomsProvider extends ChangeNotifier {
 
       if (data['error'] != null) {
         _error = data['error'];
-        notifyListeners();
+        _notify();
         return false;
       }
 
@@ -43,7 +49,7 @@ class RoomsProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _error = 'Failed to create room';
-      notifyListeners();
+      _notify();
       return false;
     }
   }
@@ -55,7 +61,7 @@ class RoomsProvider extends ChangeNotifier {
 
       if (data['error'] != null) {
         _error = data['error'];
-        notifyListeners();
+        _notify();
         return false;
       }
 
@@ -63,7 +69,7 @@ class RoomsProvider extends ChangeNotifier {
       return true;
     } catch (e) {
       _error = 'Failed to join room';
-      notifyListeners();
+      _notify();
       return false;
     }
   }

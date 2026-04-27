@@ -31,13 +31,19 @@ class DirectMessagesProvider extends ChangeNotifier {
     return _conversations.where((c) => c.unreadCount > 0).length;
   }
 
+  void _notify() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
   // ─── Fetch Conversations ─────────────────────────────────────────────────
   // Loads all conversation summaries for the Chats tab
   // Each conversation shows the last message and unread count
   Future<void> fetchConversations(String token) async {
     _isLoading = true;
     _error = null;
-    notifyListeners();
+    _notify();
 
     try {
       final data = await ApiService.getConversations(token);
@@ -47,7 +53,7 @@ class DirectMessagesProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
+    _notify();
   }
 
   // ─── Load Direct Messages ────────────────────────────────────────────────
@@ -57,7 +63,7 @@ class DirectMessagesProvider extends ChangeNotifier {
     _isLoadingMessages = true;
     _messages = [];
     _error = null;
-    notifyListeners();
+    _notify();
 
     try {
       final data = await ApiService.getConversation(token, contactId);
@@ -67,7 +73,7 @@ class DirectMessagesProvider extends ChangeNotifier {
     }
 
     _isLoadingMessages = false;
-    notifyListeners();
+    _notify();
   }
 
   // ─── Send Direct Message ─────────────────────────────────────────────────
@@ -84,7 +90,7 @@ class DirectMessagesProvider extends ChangeNotifier {
     // Check if message belongs to the currently open conversation
     if (message.senderId == currentContactId) {
       _messages.add(message);
-      notifyListeners();
+      _notify();
     }
   }
 
@@ -127,13 +133,16 @@ class DirectMessagesProvider extends ChangeNotifier {
         ),
       );
     }
-    notifyListeners();
+    // Use addPostFrameCallback to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _notify();
+    });
   }
 
   // ─── Clear Messages ──────────────────────────────────────────────────────
   // Clears messages when leaving a direct chat screen
   void clearMessages() {
     _messages = [];
-    notifyListeners();
+    _notify();
   }
 }

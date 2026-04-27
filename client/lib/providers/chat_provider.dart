@@ -16,6 +16,12 @@ class ChatProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  void _notify() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
   // ─── Load Room Messages ──────────────────────────────────────────────────
   // Fetches message history from REST API when chat screen opens
   // Then joins the WebSocket room for real-time updates
@@ -23,7 +29,7 @@ class ChatProvider extends ChangeNotifier {
     _isLoading = true;
     _messages = [];
     _error = null;
-    notifyListeners();
+    _notify();
 
     try {
       // Fetch existing messages from backend
@@ -37,7 +43,7 @@ class ChatProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
-    notifyListeners();
+    _notify();
   }
 
   // ─── Add Incoming Message ────────────────────────────────────────────────
@@ -45,7 +51,7 @@ class ChatProvider extends ChangeNotifier {
   // Adds it to the list and notifies UI to rebuild
   void addMessage(Message message) {
     _messages.add(message);
-    notifyListeners();
+    _notify();
   }
 
   // ─── Send Room Message ───────────────────────────────────────────────────
@@ -61,13 +67,13 @@ class ChatProvider extends ChangeNotifier {
   void leaveRoom(int roomId) {
     _wsService.leaveRoom(roomId);
     _messages = [];
-    notifyListeners();
+    _notify();
   }
 
   // ─── Clear Messages ──────────────────────────────────────────────────────
   // Resets the message list when switching rooms
   void clearMessages() {
     _messages = [];
-    notifyListeners();
+    _notify();
   }
 }
