@@ -1,4 +1,4 @@
-const pool = require('../db/pool');
+const pool = require("../db/pool");
 
 // ─── Send Direct Message ──────────────────────────────────────────────────
 // Sends a private message from the current user to another user
@@ -14,11 +14,11 @@ const sendDirectMessage = async (req, res) => {
        WHERE (requester_id = $1 AND receiver_id = $2)
        OR (requester_id = $2 AND receiver_id = $1)
        AND status = 'accepted'`,
-      [senderId, receiverId]
+      [senderId, receiverId],
     );
 
     if (contact.rows.length === 0) {
-      return res.status(403).json({ error: 'You are not contacts' });
+      return res.status(403).json({ error: "You are not contacts" });
     }
 
     // Insert the message into direct_messages table
@@ -26,14 +26,13 @@ const sendDirectMessage = async (req, res) => {
       `INSERT INTO direct_messages (sender_id, receiver_id, content)
        VALUES ($1, $2, $3)
        RETURNING *`,
-      [senderId, receiverId, content]
+      [senderId, receiverId, content],
     );
 
     res.status(201).json(result.rows[0]);
-
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -54,21 +53,20 @@ const getConversation = async (req, res) => {
        WHERE (sender_id = $1 AND receiver_id = $2)
        OR (sender_id = $2 AND receiver_id = $1)
        ORDER BY created_at ASC`,
-      [userId, contactId]
+      [userId, contactId],
     );
 
     // Mark all received messages as read
     await pool.query(
       `UPDATE direct_messages SET is_read = TRUE
        WHERE receiver_id = $1 AND sender_id = $2`,
-      [userId, contactId]
+      [userId, contactId],
     );
 
     res.json(result.rows);
-
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -82,33 +80,34 @@ const getConversations = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT DISTINCT ON (other_user.id)
-         other_user.id AS user_id,
-         other_user.username,
-         direct_messages.content AS last_message,
-         direct_messages.created_at AS last_message_at,
-         -- Count unread messages from this contact
-         COUNT(CASE WHEN direct_messages.is_read = FALSE
-               AND direct_messages.receiver_id = $1
-               THEN 1 END) AS unread_count
-       FROM direct_messages
-       JOIN users AS other_user ON
-         CASE
-           WHEN direct_messages.sender_id = $1 THEN direct_messages.receiver_id
-           ELSE direct_messages.sender_id
-         END = other_user.id
-       WHERE direct_messages.sender_id = $1
-       OR direct_messages.receiver_id = $1
-       GROUP BY other_user.id, other_user.username,
-                direct_messages.content, direct_messages.created_at
-       ORDER BY other_user.id, direct_messages.created_at DESC`,
-      [userId]
+     other_user.id AS user_id,
+     other_user.username,
+     direct_messages.content AS last_message,
+     direct_messages.created_at AS last_message_at,
+     -- Count ALL unread messages from this contact
+     (SELECT COUNT(*) FROM direct_messages dm
+      WHERE dm.sender_id = other_user.id
+      AND dm.receiver_id = $1
+      AND dm.is_read = FALSE) AS unread_count
+   FROM direct_messages
+   JOIN users AS other_user ON
+     CASE
+       WHEN direct_messages.sender_id = $1 THEN direct_messages.receiver_id
+       ELSE direct_messages.sender_id
+     END = other_user.id
+   WHERE direct_messages.sender_id = $1
+   OR direct_messages.receiver_id = $1
+   GROUP BY other_user.id, other_user.username,
+            direct_messages.content, direct_messages.created_at
+   ORDER BY other_user.id, direct_messages.created_at DESC`,
+      [userId],
     );
 
     res.json(result.rows);
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: "Server error" });
   }
 };
 
