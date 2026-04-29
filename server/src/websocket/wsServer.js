@@ -205,19 +205,21 @@ async function handleSendDirectMessage(ws, message) {
   if (!receiverId || !content) return;
 
   try {
+    console.log("Handling DM to receiver:", receiverId);
+
     // Save message to direct_messages table
     const result = await pool.query(
       `INSERT INTO direct_messages (sender_id, receiver_id, content)
        VALUES ($1, $2, $3)
        RETURNING id, sender_id, receiver_id, content, created_at`,
-      [ws.user.id, receiverId, content]
+      [ws.user.id, receiverId, content],
     );
 
     const savedMessage = result.rows[0];
 
     // Build the message payload to send to receiver
     const payload = JSON.stringify({
-      type: 'new_direct_message',
+      type: "new_direct_message",
       id: savedMessage.id,
       senderId: savedMessage.sender_id,
       senderName: ws.user.username,
@@ -226,40 +228,30 @@ async function handleSendDirectMessage(ws, message) {
       createdAt: savedMessage.created_at,
     });
 
-    // Find receiver's active WebSocket connection and deliver message
-    // The receiver might be connected in any room so we search all rooms
-    let delivered = false;
-    Object.values(rooms).forEach((clients) => {
-      clients.forEach(({ ws: clientWs }) => {
-        if (
-          clientWs.user?.id === receiverId &&
-          clientWs.readyState === WebSocket.OPEN
-        ) {
-          clientWs.send(payload);
-          delivered = true;
-        }
-      });
+    // Search ALL connected clients and deliver to receiver
+    console.log("Looking for receiver in wss.clients");
+    let found = false;
+
+    wss.clients.forEach((client) => {
+      console.log("Client id:", client.user?.id, "receiverId:", receiverId);
+      if (
+        client.user?.id === parseInt(receiverId) &&
+        client.readyState === WebSocket.OPEN
+      ) {
+        found = true;
+        client.send(payload);
+      }
     });
 
-    // Also check connected clients not in any room
-    // by searching through the wss clients directly
-    if (!delivered) {
-      wss.clients.forEach((client) => {
-        if (
-          client.user?.id === receiverId &&
-          client.readyState === WebSocket.OPEN
-        ) {
-          client.send(payload);
-        }
-      });
-    }
-
+    console.log("Receiver found:", found);
   } catch (err) {
-    console.error('Error sending direct message:', err);
-    ws.send(JSON.stringify({
-      type: 'error',
-      message: 'Failed to send direct message',
-    }));
+    console.error("Error sending direct message:", err);
+    ws.send(
+      JSON.stringify({
+        type: "error",
+        message: "Failed to send direct message",
+      }),
+    );
   }
 }
 
