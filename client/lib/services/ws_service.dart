@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import '../config.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import '../config.dart';
 
 class WsService {
   // Single instance of WsService (singleton pattern)
@@ -12,19 +12,24 @@ class WsService {
   // The WebSocket channel used for sending and receiving messages
   WebSocketChannel? _channel;
 
-  // StreamController broadcasts all incoming messages to listeners
-  // We use a broadcast stream so multiple screens can listen at once
+  // Broadcast stream for all incoming messages
   final _messageController = StreamController<Map<String, dynamic>>.broadcast();
-
-  // Public stream that UI can listen to for incoming messages
   Stream<Map<String, dynamic>> get messageStream => _messageController.stream;
 
-  // Whether the WebSocket is currently connected
+  // Tracks online status of users by their ID
+  // { userId: true/false }
+  final Map<int, bool> _onlineUsers = {};
+
   bool _isConnected = false;
   bool get isConnected => _isConnected;
 
-  // ─── Connect to WebSocket Server ─────────────────────────────────────────
-  // Called once after login, passing the JWT token for authentication
+  // ─── Check if User is Online ─────────────────────────────────────────────
+  // Returns true if the user is currently online
+  bool isUserOnline(int userId) {
+    return _onlineUsers[userId] ?? false;
+  }
+
+  // ─── Connect ─────────────────────────────────────────────────────────────
   void connect(String token) {
     // Avoid duplicate connections
     if (_isConnected) {
@@ -36,10 +41,11 @@ class WsService {
       // Connect to the server WebSocket endpoint with token in query string
       // Android emulator uses 10.0.2.2 to reach the host machine's localhost
       final wsBase = Config.baseUrl
-          .replaceFirst('http', 'ws') // Convert http to ws
-          .replaceFirst('/api', ''); // Remove /api suffix
+          .replaceFirst('http', 'ws')
+          .replaceFirst('/api', '');
 
       final uri = Uri.parse('$wsBase?token=$token');
+      print('Connecting to WebSocket: $uri');
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
 
@@ -52,8 +58,12 @@ class WsService {
           final message = jsonDecode(data) as Map<String, dynamic>;
           print('WS received: $message');
 
-          // Push the decoded message into the broadcast stream
-          // All active listeners (chat screen, home screen) will receive it
+          // Handle presence updates internally
+          if (message['type'] == 'presence_update') {
+            _updatePresence(message);
+          }
+
+          // Push all messages to broadcast stream
           _messageController.add(message);
         },
 
@@ -75,51 +85,48 @@ class WsService {
     }
   }
 
-  // ─── Join a Room ──────────────────────────────────────────────────────────
-  // Sends a join_room event to the server so we start receiving
-  // messages from that specific room
+  // ─── Update Presence ─────────────────────────────────────────────────────
+  // Updates the online status map when a presence_update event arrives
+  void _updatePresence(Map<String, dynamic> data) {
+    final userId = data['userId'] as int;
+    final isOnline = data['isOnline'] as bool;
+    _onlineUsers[userId] = isOnline;
+    print('Presence update: userId=$userId isOnline=$isOnline');
+  }
+
+  // ─── Join Room ────────────────────────────────────────────────────────────
   void joinRoom(int roomId) {
     _send({'type': 'join_room', 'roomId': roomId});
   }
 
-  // ─── Leave a Room ─────────────────────────────────────────────────────────
-  // Sends a leave_room event to the server so we stop receiving
-  // messages from that room
+  // ─── Leave Room ───────────────────────────────────────────────────────────
   void leaveRoom(int roomId) {
     _send({'type': 'leave_room', 'roomId': roomId});
   }
 
-  // ─── Send a Message ───────────────────────────────────────────────────────
-  // Sends a chat message to the server for a specific room
-  // The server will save it to PostgreSQL and broadcast it to all room members
+  // ─── Send Room Message ────────────────────────────────────────────────────
   void sendMessage(int roomId, String content) {
     _send({'type': 'send_message', 'roomId': roomId, 'content': content});
   }
 
-  // ─── Internal Send Helper ─────────────────────────────────────────────────
-  // Encodes any Map as JSON and sends it through the WebSocket channel
-  // Always check connection before sending to avoid errors
-  void _send(Map<String, dynamic> data) {
-    if (!_isConnected || _channel == null) {
-      print('Cannot send message: WebSocket not connected');
-      return;
-    }
-
-    // Encode Map to JSON string before sending
-    final encoded = jsonEncode(data);
-    print('WS sending: $encoded');
-    _channel!.sink.add(encoded);
-  }
-
-  // ─── Send Direct Message ─────────────────────────────────────────────────
-  // Sends a private message to a specific user through WebSocket
-  // The server saves it to direct_messages table and delivers it
+  // ─── Send Direct Message ──────────────────────────────────────────────────
   void sendDirectMessage(int receiverId, String content) {
     _send({
       'type': 'send_direct_message',
       'receiverId': receiverId,
       'content': content,
     });
+  }
+
+  // ─── Internal Send Helper ─────────────────────────────────────────────────
+  void _send(Map<String, dynamic> data) {
+    if (!_isConnected || _channel == null) {
+      print('Cannot send: WebSocket not connected');
+      return;
+    }
+    final encoded = jsonEncode(data);
+    print('WS sending: $encoded');
+    _channel!.sink.add(encoded);
   }
 
   // ─── Disconnect ───────────────────────────────────────────────────────────
@@ -131,6 +138,7 @@ class WsService {
       _channel = null;
     }
     _isConnected = false;
+    _onlineUsers.clear();
     print('WebSocket disconnected');
   }
 }

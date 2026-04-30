@@ -50,24 +50,30 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
     _wsService.messageStream.listen((data) {
       if (!mounted) return;
 
-      // Handle incoming direct message from server
-      if (data['type'] == 'new_direct_message') {
-        final message = Message(
-          id: data['id'],
-          senderId: data['senderId'],
-          senderName: data['senderName'],
-          content: data['content'],
-          createdAt: data['createdAt'].toString(),
-        );
+      switch (data['type']) {
+        // Handle new direct message
+        case 'new_direct_message':
+          final message = Message(
+            id: data['id'],
+            senderId: data['senderId'],
+            senderName: data['senderName'],
+            content: data['content'],
+            createdAt: data['createdAt'].toString(),
+          );
+          context.read<DirectMessagesProvider>().addMessage(
+            message,
+            widget.contact.userId,
+          );
+          _scrollToBottom();
+          break;
 
-        // Add message only if it's from the current contact
-        context.read<DirectMessagesProvider>().addMessage(
-          message,
-          widget.contact.userId,
-        );
-
-        // Scroll to bottom after new message arrives
-        _scrollToBottom();
+        // Rebuild UI when contact's presence changes
+        case 'presence_update':
+          if (data['userId'] == widget.contact.userId) {
+            // Trigger rebuild to update online indicator
+            setState(() {});
+          }
+          break;
       }
     });
   }
@@ -147,7 +153,7 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
         titleSpacing: 0,
         title: Row(
           children: [
-            // Contact avatar with first letter of username
+            // Contact avatar
             CircleAvatar(
               backgroundColor: Colors.green.shade100,
               child: Text(
@@ -156,8 +162,44 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            // Contact username
-            Text(widget.contact.username, style: const TextStyle(fontSize: 16)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Contact username
+                Text(
+                  widget.contact.username,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                // Online/offline status indicator
+                Row(
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        // Green dot if online, grey if offline
+                        color: WsService().isUserOnline(widget.contact.userId)
+                            ? Colors.green
+                            : Colors.grey,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      WsService().isUserOnline(widget.contact.userId)
+                          ? 'Online'
+                          : 'Offline',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: WsService().isUserOnline(widget.contact.userId)
+                            ? Colors.green
+                            : Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ],
         ),
       ),
