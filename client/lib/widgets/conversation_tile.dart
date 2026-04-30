@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/conversation.dart';
+import '../services/ws_service.dart';
 
 class ConversationTile extends StatelessWidget {
   final Conversation conversation;
@@ -39,22 +40,44 @@ class ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Check if this contact is currently online
+    final isOnline = WsService().isUserOnline(conversation.userId);
+
     return ListTile(
-      // Contact avatar with first letter of username
-      leading: CircleAvatar(
-        backgroundColor: Colors.blue.shade100,
-        radius: 26,
-        child: Text(
-          conversation.username[0].toUpperCase(),
-          style: const TextStyle(
-            color: Colors.blue,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+      // Contact avatar with online indicator
+      leading: Stack(
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.blue.shade100,
+            radius: 26,
+            child: Text(
+              conversation.username[0].toUpperCase(),
+              style: const TextStyle(
+                color: Colors.blue,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
-        ),
+          // Online dot positioned at bottom right of avatar
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Container(
+              width: 13,
+              height: 13,
+              decoration: BoxDecoration(
+                // Green if online, grey if offline
+                color: isOnline ? Colors.green : Colors.grey,
+                shape: BoxShape.circle,
+                // White border to separate from avatar
+                border: Border.all(color: Colors.white, width: 2),
+              ),
+            ),
+          ),
+        ],
       ),
 
-      // Contact username
       title: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

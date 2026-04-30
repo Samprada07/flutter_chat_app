@@ -38,14 +38,22 @@ class _ChatsScreenState extends State<ChatsScreen> {
     _wsService.messageStream.listen((data) {
       if (!mounted) return;
 
-      if (data['type'] == 'new_direct_message') {
-        // Update conversation preview with latest message
-        context.read<DirectMessagesProvider>().updateConversationPreview(
-          data['senderId'],
-          data['senderName'],
-          data['content'],
-          incrementUnread: true,
-        );
+      switch (data['type']) {
+        // Update conversation preview on new message
+        case 'new_direct_message':
+          context.read<DirectMessagesProvider>().updateConversationPreview(
+            data['senderId'],
+            data['senderName'],
+            data['content'],
+            incrementUnread: true,
+          );
+          break;
+
+        // Rebuild UI when any user's presence changes
+        // This updates the online dot in conversation tiles
+        case 'presence_update':
+          setState(() {});
+          break;
       }
     });
   }

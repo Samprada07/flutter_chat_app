@@ -4,6 +4,7 @@ import '../providers/auth_provider.dart';
 import '../providers/contacts_provider.dart';
 import '../models/contact.dart';
 import 'direct_message_screen.dart';
+import '../services/ws_service.dart';
 
 class ContactsScreen extends StatefulWidget {
   // Called from HomeScreen to toggle search
@@ -18,6 +19,8 @@ class ContactsScreen extends StatefulWidget {
 class _ContactsScreenState extends State<ContactsScreen> {
   final _searchController = TextEditingController();
 
+  final _wsService = WsService();
+
   @override
   void initState() {
     super.initState();
@@ -25,6 +28,20 @@ class _ContactsScreenState extends State<ContactsScreen> {
       final token = context.read<AuthProvider>().user?.token ?? '';
       context.read<ContactsProvider>().fetchContacts(token);
       context.read<ContactsProvider>().fetchPendingRequests(token);
+
+      // Listen for presence updates to refresh online dots
+      _listenToPresence();
+    });
+  }
+
+  // ─── Listen to Presence Updates ─────────────────────────────────────────
+  // Rebuilds the contacts list when any user comes online or goes offline
+  void _listenToPresence() {
+    _wsService.messageStream.listen((data) {
+      if (!mounted) return;
+      if (data['type'] == 'presence_update') {
+        setState(() {});
+      }
     });
   }
 
@@ -203,12 +220,33 @@ class _ContactsScreenState extends State<ContactsScreen> {
         final contact = contacts.contacts[index];
         return Card(
           child: ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.green.shade100,
-              child: Text(
-                contact.username[0].toUpperCase(),
-                style: const TextStyle(color: Colors.green),
-              ),
+            leading: Stack(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.green.shade100,
+                  radius: 22,
+                  child: Text(
+                    contact.username[0].toUpperCase(),
+                    style: const TextStyle(color: Colors.green),
+                  ),
+                ),
+                // Online status dot
+                Positioned(
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: WsService().isUserOnline(contact.userId)
+                          ? Colors.green
+                          : Colors.grey,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+              ],
             ),
             title: Text(
               contact.username,
