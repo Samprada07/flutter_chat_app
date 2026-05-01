@@ -63,6 +63,14 @@ class WsService {
             _updatePresence(message);
           }
 
+          // Handle initial online users list sent on connection
+          if (message['type'] == 'online_users') {
+            final userIds = List<int>.from(message['userIds']);
+            for (final id in userIds) {
+              _onlineUsers[id] = true;
+            }
+          }
+
           // Push all messages to broadcast stream
           _messageController.add(message);
         },

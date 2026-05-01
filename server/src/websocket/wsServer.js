@@ -85,6 +85,23 @@ function setupWebSocket(server) {
       type: 'connected',
       message: `Welcome ${user.username}!`,
     }));
+
+     // Send currently online users to the newly connected client
+    const onlineUsers = [];
+    wss.clients.forEach((client) => {
+      if (
+        client.user &&
+        client.readyState === WebSocket.OPEN &&
+        client.user.id !== user.id
+      ) {
+        onlineUsers.push(client.user.id);
+      }
+    });
+
+    ws.send(JSON.stringify({
+      type: 'online_users',
+      userIds: onlineUsers,
+    }));
   });
 
   console.log('WebSocket server is ready');
