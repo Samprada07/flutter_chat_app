@@ -1,9 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const { register, login } = require('../controllers/authControllers');
-
-const pool = require('../db/pool');
+const {
+  validateRegister,
+  validateLogin,
+} = require('../middleware/validateMiddleware');
 const authMiddleware = require('../middleware/authMiddleware');
+const pool = require('../db/pool');
 
 // Get online status of a user
 router.get('/status/:userId', authMiddleware, async (req, res) => {
@@ -28,7 +31,8 @@ router.get('/status/:userId', authMiddleware, async (req, res) => {
   }
 });
 
-router.post('/register', register);
-router.post('/login', login);
+// Apply validation middleware before controller
+router.post('/register', validateRegister, register);
+router.post('/login', validateLogin, login);
 
 module.exports = router;

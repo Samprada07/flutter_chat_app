@@ -34,6 +34,22 @@ app.get('/api/protected', authMiddleware, (req, res) => {
   res.json({ message: `Hello ${req.user.username}!` });
 });
 
+// ─── Global Error Handler ─────────────────────────────────────────────────
+// Catches any unhandled errors thrown in route handlers
+// Returns a clean error response instead of crashing the server
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err.stack);
+  res.status(500).json({
+    error: 'Something went wrong. Please try again.',
+  });
+});
+
+// ─── Handle 404 Routes ────────────────────────────────────────────────────
+// Returns a clean error for any undefined routes
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
 // ─── HTTP + WebSocket Server ──────────────────────────────────────────────
 const server = http.createServer(app);
 setupWebSocket(server);
