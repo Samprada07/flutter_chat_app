@@ -46,19 +46,27 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
     _wsService.messageStream.listen((data) {
       if (!mounted) return;
 
-      // Handle new chat message broadcast from server
-      if (data['type'] == 'new_message' && data['roomId'] == widget.room.id) {
-        final message = Message(
-          id: data['id'],
-          senderId: data['senderId'],
-          senderName: data['senderName'],
-          content: data['content'],
-          createdAt: data['createdAt'].toString(),
-        );
+      switch (data['type']) {
+        // Handle new room message
+        case 'new_message':
+          if (data['roomId'] == widget.room.id) {
+            final message = Message(
+              id: data['id'],
+              senderId: data['senderId'],
+              senderName: data['senderName'],
+              content: data['content'],
+              createdAt: data['createdAt'].toString(),
+            );
+            context.read<ChatProvider>().addMessage(message);
+            _scrollToBottom();
+          }
+          break;
 
-        // Add message to provider and scroll to bottom
-        context.read<ChatProvider>().addMessage(message);
-        _scrollToBottom();
+        // Reload messages after reconnection
+        case 'connected':
+          final token = context.read<AuthProvider>().user?.token ?? '';
+          context.read<ChatProvider>().loadRoomMessages(token, widget.room.id);
+          break;
       }
     });
   }

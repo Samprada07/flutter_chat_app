@@ -75,6 +75,15 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
             setState(() {});
           }
           break;
+
+        case 'connected':
+          // Reload messages after successful reconnection
+          final token = context.read<AuthProvider>().user?.token ?? '';
+          context.read<DirectMessagesProvider>().loadMessages(
+            token,
+            widget.contact.userId,
+          );
+          break;
       }
     });
   }
