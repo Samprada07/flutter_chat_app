@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/direct_messages_provider.dart';
 import '../services/ws_service.dart';
 import '../widgets/message_bubble.dart';
+import '../widgets/connection_banner.dart';
 
 class DirectMessageScreen extends StatefulWidget {
   // The contact we are chatting with
@@ -206,6 +207,7 @@ class _DirectMessageScreenState extends State<DirectMessageScreen> {
 
       body: Column(
         children: [
+          const ConnectionBanner(),
           // ─── Messages List ───────────────────────────────────────────
           Expanded(
             child: dm.isLoadingMessages

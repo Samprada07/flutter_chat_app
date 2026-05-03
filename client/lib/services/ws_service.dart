@@ -23,13 +23,29 @@ class WsService {
   bool _isConnected = false;
   bool get isConnected => _isConnected;
 
-  // ─── Check if User is Online ─────────────────────────────────────────────
-  // Returns true if the user is currently online
-  bool isUserOnline(int userId) {
-    return _onlineUsers[userId] ?? false;
-  }
+  // ─── Reconnection State ───────────────────────────────────────────────────
+  // Stores the token for reconnection attempts
+  String? _savedToken;
 
-  // ─── Connect ─────────────────────────────────────────────────────────────
+  // Timer for scheduling reconnection attempts
+  Timer? _reconnectTimer;
+
+  // Current reconnection attempt count
+  int _reconnectAttempts = 0;
+
+  // Maximum number of reconnection attempts before giving up
+  static const int _maxReconnectAttempts = 5;
+
+  // Delay between reconnection attempts in seconds
+  // Doubles each attempt (exponential backoff)
+  static const int _reconnectDelay = 2;
+
+  // ─── Check if User is Online ──────────────────────────────────────────────
+  bool isUserOnline(int userId) => _onlineUsers[userId] ?? false;
+
+  // ─── Connect ──────────────────────────────────────────────────────────────
+  // Connects to the WebSocket server with the given token
+  // Saves the token for automatic reconnection
   void connect(String token) {
     // Avoid duplicate connections
     if (_isConnected) {
@@ -37,17 +53,26 @@ class WsService {
       return;
     }
 
+    // Save token for reconnection attempts
+    _savedToken = token;
+    _connectInternal(token);
+  }
+
+  // ─── Internal Connect ─────────────────────────────────────────────────────
+  // Handles the actual WebSocket connection logic
+  // Called by connect() and reconnect()
+  void _connectInternal(String token) {
     try {
-      // Connect to the server WebSocket endpoint with token in query string
-      // Android emulator uses 10.0.2.2 to reach the host machine's localhost
       final wsBase = Config.baseUrl
           .replaceFirst('http', 'ws')
           .replaceFirst('/api', '');
 
       final uri = Uri.parse('$wsBase?token=$token');
       print('Connecting to WebSocket: $uri');
+
       _channel = WebSocketChannel.connect(uri);
       _isConnected = true;
+      _reconnectAttempts = 0; // Reset attempts on successful connection
 
       print('WebSocket connected');
 
@@ -58,12 +83,12 @@ class WsService {
           final message = jsonDecode(data) as Map<String, dynamic>;
           print('WS received: $message');
 
-          // Handle presence updates internally
+          // Handle presence update internally
           if (message['type'] == 'presence_update') {
             _updatePresence(message);
           }
 
-          // Handle initial online users list sent on connection
+          // Handle initial online users list
           if (message['type'] == 'online_users') {
             final userIds = List<int>.from(message['userIds']);
             for (final id in userIds) {
@@ -75,26 +100,66 @@ class WsService {
           _messageController.add(message);
         },
 
-        // Called when the connection is closed by the server
+        // ─── Connection Closed ─────────────────────────────────────────
+        // Triggered when server closes the connection
+        // Attempts to reconnect automatically
         onDone: () {
           print('WebSocket connection closed');
           _isConnected = false;
+          _scheduleReconnect();
         },
 
-        // Called when an error occurs on the stream
+        // ─── Connection Error ──────────────────────────────────────────
+        // Triggered when a network error occurs
+        // Attempts to reconnect automatically
         onError: (error) {
           print('WebSocket error: $error');
           _isConnected = false;
+          _scheduleReconnect();
         },
       );
     } catch (e) {
       print('WebSocket connection failed: $e');
       _isConnected = false;
+      _scheduleReconnect();
     }
   }
 
-  // ─── Update Presence ─────────────────────────────────────────────────────
-  // Updates the online status map when a presence_update event arrives
+  // ─── Schedule Reconnect ───────────────────────────────────────────────────
+  // Schedules a reconnection attempt with exponential backoff
+  // Gives up after _maxReconnectAttempts attempts
+  void _scheduleReconnect() {
+    // Don't reconnect if no token saved (user logged out)
+    if (_savedToken == null) return;
+
+    // Give up after max attempts
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      print('Max reconnection attempts reached. Giving up.');
+      return;
+    }
+
+    // Cancel any existing reconnect timer
+    _reconnectTimer?.cancel();
+
+    // Calculate delay with exponential backoff
+    // Attempt 1: 2s, Attempt 2: 4s, Attempt 3: 8s, etc.
+    final delay = _reconnectDelay * (1 << _reconnectAttempts);
+    _reconnectAttempts++;
+
+    print(
+      'Scheduling reconnect attempt $_reconnectAttempts '
+      'in ${delay}s...',
+    );
+
+    _reconnectTimer = Timer(Duration(seconds: delay), () {
+      if (_savedToken != null && !_isConnected) {
+        print('Attempting reconnect $_reconnectAttempts...');
+        _connectInternal(_savedToken!);
+      }
+    });
+  }
+
+  // ─── Update Presence ──────────────────────────────────────────────────────
   void _updatePresence(Map<String, dynamic> data) {
     final userId = data['userId'] as int;
     final isOnline = data['isOnline'] as bool;
@@ -138,13 +203,21 @@ class WsService {
   }
 
   // ─── Disconnect ───────────────────────────────────────────────────────────
-  // Called on logout — closes the WebSocket connection cleanly
-  // and resets the connection state
+  // Called on logout — cancels reconnection and clears state
   void disconnect() {
+    // Cancel any scheduled reconnection
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
+    // Clear saved token so reconnection doesn't trigger
+    _savedToken = null;
+    _reconnectAttempts = 0;
+
     if (_channel != null) {
       _channel!.sink.close();
       _channel = null;
     }
+
     _isConnected = false;
     _onlineUsers.clear();
     print('WebSocket disconnected');

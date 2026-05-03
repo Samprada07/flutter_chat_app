@@ -6,6 +6,7 @@ import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../services/ws_service.dart';
 import '../widgets/message_bubble.dart';
+import '../widgets/connection_banner.dart';
 
 class GroupChatScreen extends StatefulWidget {
   final Room room;
@@ -134,6 +135,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
       // ─── Messages List ─────────────────────────────────────────────────
       body: Column(
         children: [
+          const ConnectionBanner(),
           Expanded(
             child: chat.isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -169,7 +171,7 @@ class _GroupChatScreenState extends State<GroupChatScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, -2),
                 ),
