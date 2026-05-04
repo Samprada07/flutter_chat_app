@@ -7,6 +7,7 @@ import '../models/room.dart';
 import 'group_chat_screen.dart';
 import 'contacts_screen.dart';
 import 'chats_screen.dart';
+import '../widgets/empty_state.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -127,12 +128,10 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (rooms.rooms.isEmpty) {
-      return const Center(
-        child: Text(
-          'No rooms yet.\nCreate one!',
-          textAlign: TextAlign.center,
-          style: TextStyle(color: Colors.grey, fontSize: 16),
-        ),
+      return const EmptyState(
+        icon: Icons.chat_bubble_outline,
+        title: 'No rooms yet',
+        subtitle: 'Tap + to create a new room',
       );
     }
 

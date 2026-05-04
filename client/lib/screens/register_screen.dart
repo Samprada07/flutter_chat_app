@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../widgets/loading_button.dart';
+import '../utils/error_handler.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -32,11 +34,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _passwordController.text.trim(),
     );
 
-    if (success && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Account created! Please login.')),
-      );
+    if (!mounted) return;
+
+    if (success) {
+      ErrorHandler.showSuccess(context, 'Account created! Please login.');
       Navigator.pushReplacementNamed(context, '/login');
+    } else {
+      ErrorHandler.showError(context, auth.error ?? 'Registration failed');
     }
   }
 
@@ -134,17 +138,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                ElevatedButton(
-                  onPressed: auth.isLoading ? null : _register,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: auth.isLoading
-                      ? const CircularProgressIndicator()
-                      : const Text('Register', style: TextStyle(fontSize: 16)),
+                LoadingButton(
+                  label: 'Register',
+                  isLoading: auth.isLoading,
+                  onPressed: _register,
                 ),
                 const SizedBox(height: 16),
 

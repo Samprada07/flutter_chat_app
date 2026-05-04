@@ -7,6 +7,7 @@ import '../models/contact.dart';
 import '../services/ws_service.dart';
 import '../widgets/conversation_tile.dart';
 import 'direct_message_screen.dart';
+import '../widgets/empty_state.dart';
 
 class ChatsScreen extends StatefulWidget {
   const ChatsScreen({super.key});
@@ -67,12 +68,10 @@ class _ChatsScreenState extends State<ChatsScreen> {
     return dm.isLoading
         ? const Center(child: CircularProgressIndicator())
         : dm.conversations.isEmpty
-        ? const Center(
-            child: Text(
-              'No conversations yet.\nMessage a contact!',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 16),
-            ),
+        ? const EmptyState(
+            icon: Icons.message_outlined,
+            title: 'No conversations yet',
+            subtitle: 'Message a contact to get started',
           )
         : RefreshIndicator(
             onRefresh: () {

@@ -5,6 +5,7 @@ import '../providers/contacts_provider.dart';
 import '../models/contact.dart';
 import 'direct_message_screen.dart';
 import '../services/ws_service.dart';
+import '../widgets/empty_state.dart';
 
 class ContactsScreen extends StatefulWidget {
   // Called from HomeScreen to toggle search
@@ -160,8 +161,10 @@ class _ContactsScreenState extends State<ContactsScreen> {
     }
 
     if (contacts.searchResults.isEmpty) {
-      return const Center(
-        child: Text('No users found', style: TextStyle(color: Colors.grey)),
+      return const EmptyState(
+        icon: Icons.people_outline,
+        title: 'No contacts yet',
+        subtitle: 'Search for users to add as contacts',
       );
     }
 
