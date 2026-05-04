@@ -30,13 +30,12 @@ class _LoginScreenState extends State<LoginScreen> {
       _passwordController.text.trim(),
     );
 
-    if (!mounted) return;
-
-    if (success) {
+    if (success && mounted) {
+      final username =
+          Provider.of<AuthProvider>(context, listen: false).user?.username ??
+          '';
+      ErrorHandler.showSuccess(context, 'Welcome, $username!');
       Navigator.pushReplacementNamed(context, '/home');
-    } else {
-      // Use ErrorHandler instead of inline error widget
-      ErrorHandler.showError(context, auth.error ?? 'Login failed');
     }
   }
 
@@ -79,9 +78,21 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: Colors.red.shade50,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      auth.error!,
-                      style: const TextStyle(color: Colors.red),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            auth.error!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),

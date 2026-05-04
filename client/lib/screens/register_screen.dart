@@ -33,14 +33,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _emailController.text.trim(),
       _passwordController.text.trim(),
     );
-
-    if (!mounted) return;
-
-    if (success) {
+    if (success && mounted) {
       ErrorHandler.showSuccess(context, 'Account created! Please login.');
       Navigator.pushReplacementNamed(context, '/login');
-    } else {
-      ErrorHandler.showError(context, auth.error ?? 'Registration failed');
     }
   }
 
@@ -83,9 +78,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: Colors.red.shade50,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      auth.error!,
-                      style: const TextStyle(color: Colors.red),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 18,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            auth.error!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
