@@ -11,6 +11,9 @@ class RoomsProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
+  // list to store joined room IDs locally
+  List<int> _myRoomIds = [];
+
   void _notify() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       notifyListeners();
@@ -26,6 +29,10 @@ class RoomsProvider extends ChangeNotifier {
     try {
       final data = await ApiService.getRooms(token);
       _rooms = data.map((r) => Room.fromJson(r)).toList();
+
+      // Also fetch and cache my room IDs
+      final myRooms = await ApiService.getMyRooms(token);
+      _myRoomIds = myRooms.map<int>((r) => r['id'] as int).toList();
     } catch (e) {
       _error = 'Failed to load rooms';
     }
@@ -75,11 +82,7 @@ class RoomsProvider extends ChangeNotifier {
   }
 
   Future<bool> isRoomMember(String token, int roomId, int userId) async {
-    try {
-      final data = await ApiService.getMyRooms(token);
-      return data.any((r) => r['id'] == roomId);
-    } catch (e) {
-      return false;
-    }
+    // Use cached list — no API call needed
+    return _myRoomIds.contains(roomId);
   }
 }
