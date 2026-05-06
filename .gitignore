@@ -14,3 +14,8 @@ pubspec.lock
 # System
 .DS_Store
 Thumbs.db
+
+# Firebase sensitive files
+client/ios/Runner/GoogleService-Info.plist
+client/macos/Runner/GoogleService-Info.plist
+server/src/serviceAccountKey.json
