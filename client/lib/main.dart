@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/rooms_provider.dart';
 import 'providers/chat_provider.dart';
 import 'providers/contacts_provider.dart';
-import 'screens/contacts_screen.dart';
-import 'screens/pending_requests_screen.dart';
 import 'providers/direct_messages_provider.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
+import 'screens/pending_requests_screen.dart';
+import 'screens/contacts_screen.dart';
 
-void main() {
+void main() async {
+  // Ensure Flutter is initialized before Firebase
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform, // add this
+  );
+  print('Firebase initialized successfully');
+
   runApp(const MyApp());
 }
 
@@ -40,8 +51,8 @@ class MyApp extends StatelessWidget {
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),
-          '/contacts': (context) => const ContactsScreen(showSearch: false),
           '/pending': (context) => const PendingRequestsScreen(),
+          '/contacts': (context) => const ContactsScreen(showSearch: false),
         },
       ),
     );
