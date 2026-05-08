@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT NOT NULL,
   is_online BOOLEAN DEFAULT FALSE,
   last_seen TIMESTAMP DEFAULT NOW(),
+  fcm_token TEXT,
   created_at TIMESTAMP DEFAULT NOW()
 );
 

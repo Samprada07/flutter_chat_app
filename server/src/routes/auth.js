@@ -31,6 +31,25 @@ router.get('/status/:userId', authMiddleware, async (req, res) => {
   }
 });
 
+// ─── Save FCM Token ───────────────────────────────────────────────────────
+// Saves the device's FCM token to the database
+// Called when the app starts so we can send push notifications
+router.post('/fcm-token', authMiddleware, async (req, res) => {
+  const { fcmToken } = req.body;
+  const userId = req.user.id;
+
+  try {
+    await pool.query(
+      'UPDATE users SET fcm_token = $1 WHERE id = $2',
+      [fcmToken, userId]
+    );
+    res.json({ message: 'FCM token saved' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // Apply validation middleware before controller
 router.post('/register', validateRegister, register);
 router.post('/login', validateLogin, login);

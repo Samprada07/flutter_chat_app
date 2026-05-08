@@ -1,6 +1,6 @@
-const WebSocket = require('ws');
-const jwt = require('jsonwebtoken');
-const pool = require('../db/pool');
+const WebSocket = require("ws");
+const jwt = require("jsonwebtoken");
+const pool = require("../db/pool");
 
 // Store connected clients
 const rooms = {};
@@ -9,12 +9,12 @@ let wss;
 function setupWebSocket(server) {
   wss = new WebSocket.Server({ server });
 
-  wss.on('connection', async (ws, req) => {
-    console.log('New WebSocket connection');
+  wss.on("connection", async (ws, req) => {
+    console.log("New WebSocket connection");
 
     // Extract token from query string
-    const params = new URLSearchParams(req.url.replace('/?', ''));
-    const token = params.get('token');
+    const params = new URLSearchParams(req.url.replace("/?", ""));
+    const token = params.get("token");
 
     // Verify token
     let user;
@@ -28,42 +28,40 @@ function setupWebSocket(server) {
 
       // Broadcast to all connected clients that this user is online
       broadcastPresence(user.id, true);
-
     } catch (err) {
-      console.log('Invalid token, closing connection');
+      console.log("Invalid token, closing connection");
       ws.close();
       return;
     }
 
     // Handle incoming messages
-    ws.on('message', async (data) => {
+    ws.on("message", async (data) => {
       try {
         const message = JSON.parse(data);
 
         switch (message.type) {
-          case 'join_room':
+          case "join_room":
             handleJoinRoom(ws, message.roomId);
             break;
-          case 'leave_room':
+          case "leave_room":
             handleLeaveRoom(ws, message.roomId);
             break;
-          case 'send_message':
+          case "send_message":
             await handleSendMessage(ws, message);
             break;
-          case 'send_direct_message':
+          case "send_direct_message":
             await handleSendDirectMessage(ws, message);
             break;
           default:
-            console.log('Unknown message type:', message.type);
+            console.log("Unknown message type:", message.type);
         }
-
       } catch (err) {
-        console.error('Error handling message:', err);
+        console.error("Error handling message:", err);
       }
     });
 
     // Handle disconnect — mark user as offline
-    ws.on('close', async () => {
+    ws.on("close", async () => {
       console.log(`User disconnected: ${ws.user?.username}`);
       removeFromAllRooms(ws);
 
@@ -76,17 +74,19 @@ function setupWebSocket(server) {
       }
     });
 
-    ws.on('error', (err) => {
-      console.error('WebSocket error:', err);
+    ws.on("error", (err) => {
+      console.error("WebSocket error:", err);
     });
 
     // Send connection success
-    ws.send(JSON.stringify({
-      type: 'connected',
-      message: `Welcome ${user.username}!`,
-    }));
+    ws.send(
+      JSON.stringify({
+        type: "connected",
+        message: `Welcome ${user.username}!`,
+      }),
+    );
 
-     // Send currently online users to the newly connected client
+    // Send currently online users to the newly connected client
     const onlineUsers = [];
     wss.clients.forEach((client) => {
       if (
@@ -98,13 +98,15 @@ function setupWebSocket(server) {
       }
     });
 
-    ws.send(JSON.stringify({
-      type: 'online_users',
-      userIds: onlineUsers,
-    }));
+    ws.send(
+      JSON.stringify({
+        type: "online_users",
+        userIds: onlineUsers,
+      }),
+    );
   });
 
-  console.log('WebSocket server is ready');
+  console.log("WebSocket server is ready");
   return wss;
 }
 
@@ -116,10 +118,10 @@ async function setUserOnline(userId, isOnline) {
       `UPDATE users
        SET is_online = $1, last_seen = NOW()
        WHERE id = $2`,
-      [isOnline, userId]
+      [isOnline, userId],
     );
   } catch (err) {
-    console.error('Error updating online status:', err);
+    console.error("Error updating online status:", err);
   }
 }
 
@@ -128,7 +130,7 @@ async function setUserOnline(userId, isOnline) {
 // This allows the UI to update the online indicator in real-time
 function broadcastPresence(userId, isOnline) {
   const payload = JSON.stringify({
-    type: 'presence_update',
+    type: "presence_update",
     userId,
     isOnline,
     lastSeen: new Date().toIso8601String,
@@ -137,12 +139,14 @@ function broadcastPresence(userId, isOnline) {
   // Send to all connected clients
   wss.clients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(JSON.stringify({
-        type: 'presence_update',
-        userId,
-        isOnline,
-        lastSeen: new Date().toISOString(),
-      }));
+      client.send(
+        JSON.stringify({
+          type: "presence_update",
+          userId,
+          isOnline,
+          lastSeen: new Date().toISOString(),
+        }),
+      );
     }
   });
 }
@@ -164,13 +168,17 @@ function handleJoinRoom(ws, roomId) {
 
   console.log(`${ws.user.username} joined room ${roomId}`);
 
-  broadcastToRoom(roomId, {
-    type: 'user_joined',
-    username: ws.user.username,
-    message: `${ws.user.username} joined the room`,
-  }, ws);
+  broadcastToRoom(
+    roomId,
+    {
+      type: "user_joined",
+      username: ws.user.username,
+      message: `${ws.user.username} joined the room`,
+    },
+    ws,
+  );
 
-  ws.send(JSON.stringify({ type: 'room_joined', roomId }));
+  ws.send(JSON.stringify({ type: "room_joined", roomId }));
 }
 
 // ─── Leave Room ───────────────────────────────────────────────────────────
@@ -182,7 +190,7 @@ function handleLeaveRoom(ws, roomId) {
   console.log(`${ws.user.username} left room ${roomId}`);
 
   broadcastToRoom(roomId, {
-    type: 'user_left',
+    type: "user_left",
     username: ws.user.username,
     message: `${ws.user.username} left the room`,
   });
@@ -199,14 +207,14 @@ async function handleSendMessage(ws, message) {
       `INSERT INTO messages (room_id, sender_id, content)
        VALUES ($1, $2, $3)
        RETURNING id, room_id, sender_id, content, created_at`,
-      [roomId, ws.user.id, content]
+      [roomId, ws.user.id, content],
     );
 
     const savedMessage = result.rows[0];
 
     // Broadcast to everyone in the room including sender
     broadcastToRoom(roomId, {
-      type: 'new_message',
+      type: "new_message",
       id: savedMessage.id,
       roomId: savedMessage.room_id,
       senderId: savedMessage.sender_id,
@@ -214,13 +222,42 @@ async function handleSendMessage(ws, message) {
       content: savedMessage.content,
       createdAt: savedMessage.created_at,
     });
+    // Get all room members except sender
+const members = await pool.query(
+  `SELECT users.id, users.fcm_token
+   FROM room_members
+   JOIN users ON room_members.user_id = users.id
+   WHERE room_members.room_id = $1
+   AND users.id != $2`,
+  [roomId, ws.user.id]
+);
 
+// Get IDs of currently online members in this room
+const onlineIds = (rooms[roomId] || []).map((c) => c.userId);
+
+// Send push notification to offline members only
+for (const member of members.rows) {
+  if (!onlineIds.includes(member.id) && member.fcm_token) {
+    await sendPushNotification({
+      fcmToken: member.fcm_token,
+      title: `New message in room`,
+      body: `${ws.user.username}: ${content}`,
+      data: {
+        type: 'room_message',
+        roomId: String(roomId),
+        senderName: ws.user.username,
+      },
+    });
+  }
+}
   } catch (err) {
-    console.error('Error saving message:', err);
-    ws.send(JSON.stringify({
-      type: 'error',
-      message: 'Failed to send message',
-    }));
+    console.error("Error saving message:", err);
+    ws.send(
+      JSON.stringify({
+        type: "error",
+        message: "Failed to send message",
+      }),
+    );
   }
 }
 
@@ -228,6 +265,8 @@ async function handleSendMessage(ws, message) {
 // Saves the direct message to PostgreSQL and delivers it
 // to the receiver if they are currently connected
 async function handleSendDirectMessage(ws, message) {
+  const { sendPushNotification } = require("../services/notificationService");
+
   const { receiverId, content } = message;
 
   if (!receiverId || !content) return;
@@ -237,14 +276,14 @@ async function handleSendDirectMessage(ws, message) {
       `INSERT INTO direct_messages (sender_id, receiver_id, content)
        VALUES ($1, $2, $3)
        RETURNING id, sender_id, receiver_id, content, created_at`,
-      [ws.user.id, receiverId, content]
+      [ws.user.id, receiverId, content],
     );
 
     const savedMessage = result.rows[0];
 
     // Build the message payload to send to receiver
     const payload = JSON.stringify({
-      type: 'new_direct_message',
+      type: "new_direct_message",
       id: savedMessage.id,
       senderId: savedMessage.sender_id,
       senderName: ws.user.username,
@@ -253,22 +292,45 @@ async function handleSendDirectMessage(ws, message) {
       createdAt: savedMessage.created_at,
     });
 
-    // Deliver to receiver if online
+    // Deliver to receiver if online, otherwise send push notification
+    let receiverOnline = false;
     wss.clients.forEach((client) => {
       if (
         client.user?.id === parseInt(receiverId) &&
         client.readyState === WebSocket.OPEN
       ) {
+        receiverOnline = true;
         client.send(payload);
       }
     });
+    // Send push notification only if receiver is offline
+    if (!receiverOnline) {
+      const receiver = await pool.query(
+        "SELECT fcm_token, username FROM users WHERE id = $1",
+        [receiverId],
+      );
 
+      if (receiver.rows[0]?.fcm_token) {
+        await sendPushNotification({
+          fcmToken: receiver.rows[0].fcm_token,
+          title: ws.user.username,
+          body: content,
+          data: {
+            type: "direct_message",
+            senderId: String(ws.user.id),
+            senderName: ws.user.username,
+          },
+        });
+      }
+    }
   } catch (err) {
-    console.error('Error sending direct message:', err);
-    ws.send(JSON.stringify({
-      type: 'error',
-      message: 'Failed to send direct message',
-    }));
+    console.error("Error sending direct message:", err);
+    ws.send(
+      JSON.stringify({
+        type: "error",
+        message: "Failed to send direct message",
+      }),
+    );
   }
 }
 
@@ -288,9 +350,7 @@ function broadcastToRoom(roomId, message, excludeWs = null) {
 // ─── Remove from All Rooms ────────────────────────────────────────────────
 function removeFromAllRooms(ws) {
   Object.keys(rooms).forEach((roomId) => {
-    rooms[roomId] = rooms[roomId].filter(
-      (client) => client.ws !== ws
-    );
+    rooms[roomId] = rooms[roomId].filter((client) => client.ws !== ws);
   });
 }
 
