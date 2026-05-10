@@ -234,4 +234,18 @@ class ApiService {
     );
     return jsonDecode(response.body);
   }
+
+  // ─── Save FCM Token ────────────────────────────────────────────────────────
+  // Saves the device FCM token to backend so server can
+  // send push notifications to this device
+  static Future<void> saveFcmToken(String authToken, String fcmToken) async {
+    await http.post(
+      Uri.parse('$baseUrl/auth/fcm-token'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $authToken',
+      },
+      body: jsonEncode({'fcmToken': fcmToken}),
+    );
+  }
 }

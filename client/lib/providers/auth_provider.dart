@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../services/api_service.dart';
-import '../services/ws_service.dart'; // Import WsService
+import '../services/ws_service.dart';
+import '../services/notification_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   User? _user;
@@ -83,6 +84,9 @@ class AuthProvider extends ChangeNotifier {
       // Connect WebSocket immediately after login
       // This ensures real-time connection is ready before entering any room
       _wsService.connect(_user!.token);
+
+      // Initialize push notifications with user's auth token
+      await NotificationService().initialize(_user!.token);
 
       _isLoading = false;
       _notify();

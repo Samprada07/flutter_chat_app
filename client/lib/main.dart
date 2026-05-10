@@ -12,17 +12,19 @@ import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/pending_requests_screen.dart';
 import 'screens/contacts_screen.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'services/notification_service.dart';
 
 void main() async {
-  // Ensure Flutter is initialized before Firebase
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, // add this
-  );
-  print('Firebase initialized successfully');
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
+  // Register background message handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  print('Firebase initialized successfully');
   runApp(const MyApp());
 }
 
