@@ -14,6 +14,7 @@ import 'screens/pending_requests_screen.dart';
 import 'screens/contacts_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notification_service.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,10 +45,9 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'Chat App',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
         initialRoute: '/login',
         routes: {
           '/login': (context) => const LoginScreen(),

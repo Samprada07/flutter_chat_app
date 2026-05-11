@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/message.dart';
+import '../theme/app_theme.dart';
 
 class MessageBubble extends StatelessWidget {
   final Message message;
@@ -43,7 +44,9 @@ class MessageBubble extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               // Blue for my messages, white for others
-              color: isMe ? Colors.blue : Colors.white,
+              color: isMe
+                  ? AppTheme.sentBubbleColor
+                  : AppTheme.receivedBubbleColor,
               borderRadius: BorderRadius.only(
                 topLeft: const Radius.circular(16),
                 topRight: const Radius.circular(16),
@@ -57,7 +60,7 @@ class MessageBubble extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -81,7 +84,9 @@ class MessageBubble extends StatelessWidget {
                   _formatTime(message.createdAt),
                   style: TextStyle(
                     fontSize: 10,
-                    color: isMe ? Colors.white.withOpacity(0.7) : Colors.grey,
+                    color: isMe
+                        ? Colors.white.withValues(alpha: 0.7)
+                        : Colors.grey,
                   ),
                 ),
               ],

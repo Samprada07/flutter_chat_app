@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../theme/app_theme.dart';
 import '../utils/error_handler.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -51,10 +52,18 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Icon(
-                  Icons.chat_bubble_rounded,
-                  size: 80,
-                  color: Colors.blue,
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: const Icon(
+                    Icons.chat_bubble_rounded,
+                    size: 56,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
