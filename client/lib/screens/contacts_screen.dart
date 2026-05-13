@@ -129,11 +129,17 @@ class _ContactsScreenState extends State<ContactsScreen> {
             child: TextField(
               controller: _searchController,
               autofocus: true,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+              ),
               decoration: InputDecoration(
                 hintText: 'Search users...',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                // Use theme-aware color instead of hardcoded grey
+                fillColor: Theme.of(
+                  context,
+                ).colorScheme.surfaceContainerHighest,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,

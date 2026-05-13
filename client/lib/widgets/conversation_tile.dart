@@ -105,7 +105,7 @@ class ConversationTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: conversation.unreadCount > 0
-                    ? Colors.black87
+                    ? Theme.of(context).textTheme.bodyMedium?.color
                     : Colors.grey,
                 fontWeight: conversation.unreadCount > 0
                     ? FontWeight.w600
