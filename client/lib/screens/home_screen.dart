@@ -269,8 +269,34 @@ class _HomeScreenState extends State<HomeScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await context.read<AuthProvider>().logout();
-              if (mounted) {
+              // Show confirmation dialog before logging out
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text(
+                        'Logout',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+              // Only logout if user confirmed
+              if (confirm == true && mounted) {
+                await context.read<AuthProvider>().logout();
                 Navigator.pushReplacementNamed(context, '/login');
               }
             },
