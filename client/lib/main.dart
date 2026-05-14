@@ -15,6 +15,7 @@ import 'screens/contacts_screen.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'services/notification_service.dart';
 import 'theme/app_theme.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,8 +49,9 @@ class MyApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.system,
-        initialRoute: '/login',
+        initialRoute: '/splash',
         routes: {
+          '/splash': (context) => const SplashScreen(),
           '/login': (context) => const LoginScreen(),
           '/register': (context) => const RegisterScreen(),
           '/home': (context) => const HomeScreen(),

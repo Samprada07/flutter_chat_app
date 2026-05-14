@@ -248,4 +248,22 @@ class ApiService {
       body: jsonEncode({'fcmToken': fcmToken}),
     );
   }
+
+  // ─── Validate Token ────────────────────────────────────────────────────────
+  // Calls a protected endpoint to verify the token is still valid
+  // Returns user data if valid, error if expired
+  static Future<Map<String, dynamic>> validateToken(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/auth/me'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'error': 'Connection failed'};
+    }
+  }
 }

@@ -121,4 +121,40 @@ class AuthProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
   }
+
+  // ─── Load User From Storage ──────────────────────────────────────────────
+  // Checks if a token exists in SharedPreferences on app start
+  // If found, validates it and logs the user in automatically
+  Future<bool> loadUserFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      if (token == null) return false;
+
+      // Verify token is still valid by calling protected endpoint
+      final response = await ApiService.validateToken(token);
+
+      if (response['error'] != null) {
+        // Token expired or invalid — clear it
+        await prefs.remove('token');
+        return false;
+      }
+
+      // Token valid — restore user session
+      _user = User.fromJson(response['user'], token);
+
+      // Reconnect WebSocket with saved token
+      _wsService.connect(token);
+
+      // Reinitialize push notifications
+      await NotificationService().initialize(token);
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('Auto login failed: $e');
+      return false;
+    }
+  }
 }
